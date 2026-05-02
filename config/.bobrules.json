@@ -1,0 +1,47 @@
+{
+  "version": "1.0.0",
+  "project": "WoRide",
+  "description": "Ghana's premier ride-hailing service",
+  "meta": {
+    "philosophy": "Layered architecture. Security is a first-class citizen. Every payment and auth operation must be isolated and protected.",
+    "stack": "Node.js, Express, Mobile Money APIs (MTN, Vodafone, AirtelTigo), USSD, GPS",
+    "terminology_map": {
+      "UI": ["components", "pages", "views", "frontend", "client"],
+      "DB": ["database", "mongo", "postgres", "sql", "prisma", "query"],
+      "PAYMENT": ["mtn", "vodafone", "airtel", "momo", "mobile money", "payment"],
+      "AUTH": ["token", "jwt", "session", "middleware", "auth"]
+    }
+  },
+  "guardrails": [
+    {
+      "id": "api-isolation",
+      "name": "Payment API Isolation",
+      "description": "Each mobile money provider (MTN, Vodafone, AirtelTigo) must have its own isolated service. Never call multiple payment APIs from the same function.",
+      "severity": "critical"
+    },
+    {
+      "id": "layered-architecture",
+      "name": "Layered Architecture",
+      "description": "No direct database calls from UI components or route handlers. All DB logic must go through a service layer.",
+      "severity": "critical"
+    },
+    {
+      "id": "security-first",
+      "name": "Security First",
+      "description": "All ride booking and payment routes must use auth middleware. No route should be accessible without authentication. No API keys or secrets in code.",
+      "severity": "critical"
+    },
+    {
+      "id": "ussd-app-separation",
+      "name": "USSD and App Layer Separation",
+      "description": "USSD and mobile app interfaces must never share direct database calls. Both must go through the same service layer.",
+      "severity": "high"
+    },
+    {
+      "id": "error-handling",
+      "name": "Graceful Error Handling",
+      "description": "Never expose raw error messages or stack traces to the client. All errors must be caught and returned as sanitized responses.",
+      "severity": "high"
+    }
+  ]
+}
