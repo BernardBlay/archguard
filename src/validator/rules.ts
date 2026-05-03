@@ -21,14 +21,48 @@ export interface BobRulesConfig {
 }
 
 /**
+ * Find .bobrules.json in the project directory
+ * Searches in multiple locations:
+ * 1. Project root: .bobrules.json
+ * 2. .bob directory: .bob/.bobrules.json
+ * 3. config directory: config/.bobrules.json
+ *
+ * @param projectDir - The project directory to search in (defaults to cwd)
+ * @returns Path to the config file or null if not found
+ */
+export function findConfigFile(projectDir: string = process.cwd()): string | null {
+  const possiblePaths = [
+    path.join(projectDir, '.bobrules.json'),
+    path.join(projectDir, '.bob', '.bobrules.json'),
+    path.join(projectDir, 'config', '.bobrules.json'),
+  ];
+
+  for (const configPath of possiblePaths) {
+    if (fs.existsSync(configPath)) {
+      return configPath;
+    }
+  }
+
+  return null;
+}
+
+/**
  * Load and parse the .bobrules.json configuration file
+ * @param projectDir - The project directory to search in (defaults to cwd)
  * @returns Parsed configuration object
  */
-export function loadRules(): BobRulesConfig {
-  const configPath = path.join(process.cwd(), 'config', '.bobrules.json');
+export function loadRules(projectDir: string = process.cwd()): BobRulesConfig {
+  const configPath = findConfigFile(projectDir);
   
-  if (!fs.existsSync(configPath)) {
-    throw new Error(`Configuration file not found at ${configPath}`);
+  if (!configPath) {
+    throw new Error(
+      `Configuration file not found in project directory: ${projectDir}\n` +
+      `Searched locations:\n` +
+      `  - ${path.join(projectDir, '.bobrules.json')}\n` +
+      `  - ${path.join(projectDir, '.bob', '.bobrules.json')}\n` +
+      `  - ${path.join(projectDir, 'config', '.bobrules.json')}\n\n` +
+      `Run 'archguard init' to create a default configuration file.`
+    );
   }
 
   const configContent = fs.readFileSync(configPath, 'utf-8');

@@ -3,20 +3,46 @@
   "version": "1.0.0",
   "description": "Architectural guardrail system for IBM Bob using Granite-3-8b",
   "main": "dist/mcp/index.js",
+  "bin": {
+    "archguard": "dist/cli.js"
+  },
+  "files": [
+    "dist/",
+    "templates/",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "node dist/mcp/index.js",
     "dev": "ts-node src/mcp/index.ts",
-    "dashboard": "ts-node src/dashboard/server.ts"
+    "dashboard": "ts-node src/dashboard/server.ts",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "mcp",
     "ibm-bob",
     "archguard",
-    "watsonx"
+    "watsonx",
+    "architectural-guardrails",
+    "code-validation",
+    "ai-safety",
+    "granite",
+    "model-context-protocol"
   ],
   "author": "Bernard Blay",
-  "license": "ISC",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/archguard.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/archguard/issues"
+  },
+  "homepage": "https://github.com/yourusername/archguard#readme",
+  "engines": {
+    "node": ">=16.0.0"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
     "cors": "^2.8.5",

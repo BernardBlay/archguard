@@ -1,0 +1,64 @@
+{
+  "version": "1.0.0",
+  "project": "Your Project Name",
+  "description": "Architectural guardrails for your project",
+  "meta": {
+    "philosophy": "Describe your project's architectural philosophy here",
+    "stack": "List your tech stack (e.g., React, Node.js, PostgreSQL)",
+    "terminology_map": {
+      "UI": ["components", "pages", "views"],
+      "backend": ["api", "services", "controllers"],
+      "database": ["models", "repositories", "queries"]
+    }
+  },
+  "guardrails": [
+    {
+      "id": "no-direct-db-access",
+      "name": "No Direct Database Access from UI",
+      "description": "UI components must not directly access the database. All data access must go through API endpoints or service layers.",
+      "severity": "critical"
+    },
+    {
+      "id": "api-versioning",
+      "name": "API Versioning Required",
+      "description": "All API endpoints must include version prefix (e.g., /api/v1/). Breaking changes require new version.",
+      "severity": "high"
+    },
+    {
+      "id": "error-handling",
+      "name": "Proper Error Handling",
+      "description": "All async operations must have try-catch blocks. Errors must be logged and user-friendly messages returned.",
+      "severity": "high"
+    },
+    {
+      "id": "authentication-required",
+      "name": "Authentication on Protected Routes",
+      "description": "All non-public API endpoints must require authentication. Use middleware to verify tokens.",
+      "severity": "critical"
+    },
+    {
+      "id": "input-validation",
+      "name": "Input Validation Required",
+      "description": "All user inputs must be validated before processing. Use validation libraries and sanitize data.",
+      "severity": "high"
+    },
+    {
+      "id": "no-secrets-in-code",
+      "name": "No Hardcoded Secrets",
+      "description": "API keys, passwords, and secrets must never be hardcoded. Use environment variables.",
+      "severity": "critical"
+    },
+    {
+      "id": "consistent-naming",
+      "name": "Consistent Naming Conventions",
+      "description": "Follow project naming conventions: camelCase for variables/functions, PascalCase for classes/components.",
+      "severity": "medium"
+    },
+    {
+      "id": "single-responsibility",
+      "name": "Single Responsibility Principle",
+      "description": "Functions and classes should have a single, well-defined purpose. Avoid god objects.",
+      "severity": "medium"
+    }
+  ]
+}
