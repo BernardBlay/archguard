@@ -8,23 +8,9 @@ import {
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 
-// Import validator functions (to be implemented in separate subtasks)
-import { loadRules, type GuardrailRule } from "../validator/rules.js";
-import { validateWithGranite } from "../validator/granite.js";
-
-// Types for validation results
-interface ValidationViolation {
-  ruleId: string;
-  ruleName: string;
-  severity: string;
-  explanation: string;
-}
-
-interface ValidationResult {
-  approved: boolean;
-  violations: ValidationViolation[];
-  suggestions: string[];
-}
+// Import validator functions
+import { getGuardrails, type GuardrailRule } from "../validator/rules";
+import { validateWithGranite, type ValidationResult, type ValidationViolation } from "../validator/granite";
 
 // MCP Server instance
 const server = new Server(
@@ -84,14 +70,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   try {
     // Load architectural rules from config
     console.error("[ArchGuard] Loading guardrail rules...");
-    const rules = await loadRules();
+    const rules = getGuardrails();
     console.error(`[ArchGuard] Loaded ${rules.length} guardrail rules`);
 
     // Validate plan using Granite-3-8b AI model
     console.error("[ArchGuard] Validating plan with Granite-3-8b...");
     const validationResult = await validateWithGranite(plan, rules);
     console.error(
-      `[ArchGuard] Validation complete. Approved: ${validationResult.approved}, Violations: ${validationResult.violations.length}`
+      `[ArchGuard] Validation complete. Valid: ${validationResult.isValid}, Violations: ${validationResult.violations.length}`
     );
 
     // Return structured validation result
@@ -108,7 +94,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     // Return error in structured format
     const errorResult: ValidationResult = {
-      approved: false,
+      isValid: false,
       violations: [
         {
           ruleId: "system-error",
@@ -120,11 +106,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               : "Unknown validation error occurred",
         },
       ],
-      suggestions: [
-        "Check that watsonx.ai credentials are configured correctly in .env",
-        "Verify that config/.bobrules.json is valid",
-        "Review the error logs for more details",
-      ],
+      summary: error instanceof Error
+        ? `Validation failed: ${error.message}`
+        : "Unknown validation error occurred. Check watsonx.ai credentials and config/.bobrules.json",
     };
 
     return {
