@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArchGuard Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .status-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-indicator.connected {
+            background: #10b981;
+        }
+        
+        .status-indicator.disconnected {
+            background: #ef4444;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            color: #333;
+            font-size: 2em;
+            font-weight: bold;
+        }
+        
+        .validation-list {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .validation-item {
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #f9fafb;
+            border-radius: 5px;
+        }
+        
+        .validation-item.has-violations {
+            border-left-color: #ef4444;
+        }
+        
+        .validation-time {
+            color: #666;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+        }
+        
+        .validation-summary {
+            color: #333;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+        
+        .violation {
+            background: #fee2e2;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            border-left: 3px solid #ef4444;
+        }
+        
+        .violation-severity {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        .violation-severity.critical {
+            background: #dc2626;
+            color: white;
+        }
+        
+        .violation-severity.high {
+            background: #f59e0b;
+            color: white;
+        }
+        
+        .violation-severity.medium {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .violation-severity.low {
+            background: #6b7280;
+            color: white;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🛡️ ArchGuard Dashboard</h1>
+            <p class="subtitle">Real-time architectural validation monitoring</p>
+        </header>
+        
+        <div class="status-card">
+            <h2>
+                <span class="status-indicator connected" id="statusIndicator"></span>
+                <span id="statusText">Connected to Dashboard Server</span>
+            </h2>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Validations</div>
+                <div class="stat-value" id="totalValidations">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Passed</div>
+                <div class="stat-value" style="color: #10b981;" id="passedValidations">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Failed</div>
+                <div class="stat-value" style="color: #ef4444;" id="failedValidations">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Critical Violations</div>
+                <div class="stat-value" style="color: #dc2626;" id="criticalViolations">0</div>
+            </div>
+        </div>
+        
+        <div class="validation-list">
+            <h2 style="margin-bottom: 20px;">Recent Validations</h2>
+            <div id="validationsList">
+                <div class="empty-state">
+                    <p>No validations yet. Waiting for Bob IDE to send validation requests...</p>
+                    <p style="margin-top: 10px; font-size: 0.9em;">Make sure the MCP server is running and Bob IDE is configured.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Connect to SSE endpoint
+        const eventSource = new EventSource('/api/events');
+        
+        eventSource.onopen = () => {
+            document.getElementById('statusIndicator').className = 'status-indicator connected';
+            document.getElementById('statusText').textContent = 'Connected to Dashboard Server';
+        };
+        
+        eventSource.onerror = () => {
+            document.getElementById('statusIndicator').className = 'status-indicator disconnected';
+            document.getElementById('statusText').textContent = 'Disconnected from Dashboard Server';
+        };
+        
+        // Load initial validation history
+        async function loadValidations() {
+            try {
+                const response = await fetch('/api/validations');
+                const validations = await response.json();
+                updateStats(validations);
+                renderValidations(validations);
+            } catch (error) {
+                console.error('Error loading validations:', error);
+            }
+        }
+        
+        function updateStats(validations) {
+            const total = validations.length;
+            const passed = validations.filter(v => v.result.isValid).length;
+            const failed = total - passed;
+            const critical = validations.reduce((sum, v) => 
+                sum + v.result.violations.filter(viol => viol.severity === 'critical').length, 0
+            );
+            
+            document.getElementById('totalValidations').textContent = total;
+            document.getElementById('passedValidations').textContent = passed;
+            document.getElementById('failedValidations').textContent = failed;
+            document.getElementById('criticalViolations').textContent = critical;
+        }
+        
+        function renderValidations(validations) {
+            const container = document.getElementById('validationsList');
+            
+            if (validations.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>No validations yet. Waiting for Bob IDE to send validation requests...</p>
+                        <p style="margin-top: 10px; font-size: 0.9em;">Make sure the MCP server is running and Bob IDE is configured.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = validations.slice().reverse().map(validation => {
+                const hasViolations = validation.result.violations.length > 0;
+                const time = new Date(validation.timestamp).toLocaleString();
+                
+                return `
+                    <div class="validation-item ${hasViolations ? 'has-violations' : ''}">
+                        <div class="validation-time">${time}</div>
+                        <div class="validation-summary">${validation.result.summary}</div>
+                        ${validation.result.violations.map(v => `
+                            <div class="violation">
+                                <span class="violation-severity ${v.severity}">${v.severity.toUpperCase()}</span>
+                                <strong>${v.ruleName}</strong>
+                                <p style="margin-top: 5px; color: #666;">${v.explanation}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Load validations on page load
+        loadValidations();
+        
+        // Refresh every 5 seconds
+        setInterval(loadValidations, 5000);
+    </script>
+</body>
+</html>
