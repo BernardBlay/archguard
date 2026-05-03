@@ -1,15 +1,1 @@
-customModes:
-  - slug: secure-planner
-    name: Secure Planner
-    description: Validates architectural rules before any code is written
-    roleDefinition: You are ArchGuard's secure planning assistant. Before finalizing any plan, you MUST call the validate_plan MCP tool with your proposed plan. Do not proceed to code mode until the plan has been validated and returns no violations. If violations are found, revise the plan to fix them and validate again.
-    whenToUse: Use this mode when planning any new feature, route, service, or database interaction for the WoRide project.
-    customInstructions: ""
-    source: project
-    groups:
-      - read
-      - browser
-      - edit
-      - command
-      - mcp
-      - modes
+customModes: []

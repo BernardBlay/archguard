@@ -10,8 +10,9 @@ ArchGuard sits between Bob's planning phase and execution phase. It:
 1. Reads your project's `.bobrules.json` architectural rulebook
 2. Intercepts Bob's plan via MCP
 3. Validates the plan against your rules using IBM Granite-3-8b
-4. Blocks violations and explains exactly what rule was broken and how to fix it
-5. Streams results to a live dashboard in real time
+4. **Shows results directly in Bob IDE chat** - no terminal needed!
+5. Blocks violations and explains exactly what rule was broken and how to fix it
+6. Optionally streams results to a live dashboard for monitoring
 
 ## Quick Start
 
@@ -53,16 +54,20 @@ npm run build
 
 ## Documentation
 
+- **[In-IDE Validation Guide](docs/IN_IDE_VALIDATION.md)** - 🆕 **NEW!** Validation results directly in Bob IDE (no terminal needed!)
 - **[Global Installation Guide](docs/GLOBAL_INSTALLATION.md)** - Complete guide for installing and using ArchGuard globally
 - **[Quick Start Guide](docs/QUICK_START.md)** - Get started quickly
 - **[Secure Planner Guide](docs/SECURE_PLANNER_GUIDE.md)** - Using ArchGuard with Bob's secure-planner mode
 
 ## Features
 
+- ✅ **In-IDE Validation** - 🆕 **NEW!** Results appear directly in Bob IDE chat (no terminal needed!)
+- ✅ **Auto-Generate Bob Rules** - 🆕 **NEW!** One command creates `.bob/rules` for any mode
 - ✅ **Global Configuration** - Configure once in Bob IDE, works across all projects
 - ✅ **Project-Specific Rules** - Each project defines its own architectural guardrails
 - ✅ **AI-Powered Validation** - Uses IBM Granite-3-8b for intelligent rule checking
-- ✅ **Real-Time Dashboard** - Monitor validation results as they happen
+- ✅ **Severity-Based Feedback** - Violations categorized by priority (Critical → Low)
+- ✅ **Optional Dashboard** - Monitor validation results in real-time (optional)
 - ✅ **Bob IDE Integration** - Seamless integration via Model Context Protocol (MCP)
 - ✅ **Flexible Configuration** - Support for multiple `.bobrules.json` locations
 
@@ -76,9 +81,28 @@ WoRide — Ghana's premier ride-hailing service (woride.app)
 - Express + SSE (real-time dashboard)
 - Model Context Protocol (MCP)
 
-## Running the Dashboard
+## New: In-IDE Validation (No Terminal Needed!)
 
-To monitor validation results in real-time:
+ArchGuard now shows validation results **directly in Bob IDE chat** - no need to switch to a terminal or dashboard!
+
+### Quick Example
+
+```typescript
+// 1. Auto-generate Bob rules for any mode
+use_mcp_tool("archguard", "create_bob_rules", {
+  mode: "code"  // or "plan", "ask", "advanced", etc.
+})
+
+// 2. Plan your changes in Bob IDE as usual
+// 3. Validation happens automatically
+// 4. Results appear in chat with clear, actionable feedback!
+```
+
+**See the [In-IDE Validation Guide](docs/IN_IDE_VALIDATION.md) for complete details.**
+
+## Optional: Running the Dashboard
+
+For additional monitoring, you can run the optional dashboard:
 
 ```bash
 cd archguard
@@ -86,6 +110,8 @@ npm run dashboard
 ```
 
 Then open http://localhost:3001 in your browser.
+
+**Note:** The dashboard is optional - all validation results now appear directly in Bob IDE!
 
 ## Requirements
 

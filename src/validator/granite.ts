@@ -27,23 +27,40 @@ export async function validateWithGranite(
   plan: string,
   rules: GuardrailRule[]
 ): Promise<ValidationResult> {
+  console.error('[ArchGuard] validateWithGranite called');
+  console.error('[ArchGuard] Plan length:', plan.length, 'characters');
+  console.error('[ArchGuard] Rules count:', rules.length);
+  
   const apiKey = process.env.WATSONX_API_KEY;
   const projectId = process.env.WATSONX_PROJECT_ID;
   const endpoint = process.env.WATSONX_ENDPOINT || 'https://us-south.ml.cloud.ibm.com';
 
+  console.error('[ArchGuard] Environment check:');
+  console.error('  - API Key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'MISSING');
+  console.error('  - Project ID:', projectId ? `${projectId.substring(0, 10)}...` : 'MISSING');
+  console.error('  - Endpoint:', endpoint);
+
   if (!apiKey || !projectId) {
+    console.error('[ArchGuard] ERROR: Missing required environment variables');
     throw new Error('Missing required environment variables: WATSONX_API_KEY and WATSONX_PROJECT_ID');
   }
 
   // Construct the prompt for Granite-3-8b-instruct
   const prompt = buildValidationPrompt(plan, rules);
+  console.error('[ArchGuard] Prompt built, length:', prompt.length, 'characters');
 
   try {
     // Get IBM Cloud IAM token
+    console.error('[ArchGuard] Requesting IAM token from IBM Cloud...');
     const iamToken = await getIAMToken(apiKey);
+    console.error('[ArchGuard] IAM token received:', iamToken ? `${iamToken.substring(0, 20)}...` : 'NONE');
 
     // Call watsonx.ai API
-    const response = await fetch(`${endpoint}/ml/v1/text/generation?version=2023-05-29`, {
+    const apiUrl = `${endpoint}/ml/v1/text/generation?version=2023-05-29`;
+    console.error('[ArchGuard] Calling watsonx.ai API:', apiUrl);
+    console.error('[ArchGuard] Model: ibm/granite-3-8b-instruct');
+    
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -63,20 +80,32 @@ export async function validateWithGranite(
       })
     });
 
+    console.error('[ArchGuard] API Response Status:', response.status, response.statusText);
+
     if (!response.ok) {
       const errorText = await response.text();
+      console.error('[ArchGuard] API Error Response:', errorText);
       throw new Error(`watsonx.ai API error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const data = await response.json() as {
       results?: Array<{ generated_text?: string }>;
     };
+    console.error('[ArchGuard] API Response received');
+    console.error('[ArchGuard] Results array length:', data.results?.length || 0);
+    
     const generatedText = data.results?.[0]?.generated_text || '';
+    console.error('[ArchGuard] Generated text length:', generatedText.length, 'characters');
+    console.error('[ArchGuard] Generated text preview:', generatedText.substring(0, 200));
 
     // Parse the response to extract violations
-    return parseValidationResponse(generatedText, rules);
+    const validationResult = parseValidationResponse(generatedText, rules);
+    console.error('[ArchGuard] Validation complete. Valid:', validationResult.isValid, 'Violations:', validationResult.violations.length);
+    
+    return validationResult;
   } catch (error) {
-    console.error('Error validating with Granite:', error);
+    console.error('[ArchGuard] ERROR in validateWithGranite:', error);
+    console.error('[ArchGuard] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     throw error;
   }
 }
@@ -85,6 +114,8 @@ export async function validateWithGranite(
  * Get IBM Cloud IAM token using API key
  */
 async function getIAMToken(apiKey: string): Promise<string> {
+  console.error('[ArchGuard] getIAMToken: Requesting token from IBM Cloud IAM...');
+  
   const response = await fetch('https://iam.cloud.ibm.com/identity/token', {
     method: 'POST',
     headers: {
@@ -94,11 +125,16 @@ async function getIAMToken(apiKey: string): Promise<string> {
     body: `grant_type=urn:ibm:params:oauth:grant-type:apikey&apikey=${apiKey}`
   });
 
+  console.error('[ArchGuard] getIAMToken: Response status:', response.status, response.statusText);
+
   if (!response.ok) {
-    throw new Error(`Failed to get IAM token: ${response.status} ${response.statusText}`);
+    const errorText = await response.text();
+    console.error('[ArchGuard] getIAMToken: Error response:', errorText);
+    throw new Error(`Failed to get IAM token: ${response.status} ${response.statusText} - ${errorText}`);
   }
 
   const data = await response.json() as { access_token: string };
+  console.error('[ArchGuard] getIAMToken: Token received successfully');
   return data.access_token;
 }
 
@@ -140,39 +176,57 @@ RESPONSE:`;
 function parseValidationResponse(response: string, rules: GuardrailRule[]): ValidationResult {
   const violations: ValidationViolation[] = [];
   
-  // Check if response indicates no violations
-  if (response.includes('NO VIOLATIONS') || response.includes('no violations')) {
-    return {
-      isValid: true,
-      violations: [],
-      summary: 'All architectural guardrails passed. No violations detected.'
-    };
-  }
-
-  // Parse violations from the response
+  console.error('[ArchGuard] parseValidationResponse: Parsing response...');
+  console.error('[ArchGuard] Full response text:', response);
+  
+  // Parse violations from the response FIRST
+  // Granite returns format: "- rule-id: explanation"
   const lines = response.split('\n');
+  console.error('[ArchGuard] Parsing', lines.length, 'lines');
+  
   for (const line of lines) {
-    // Look for patterns like "RULE_ID: explanation" or "rule-id: explanation"
-    const match = line.match(/^([a-z-]+):\s*(.+)$/i);
+    // Look for patterns like "- rule-id: explanation" or "- RULE_ID: explanation"
+    const match = line.match(/^-\s*([a-z-]+):\s*(.+)$/i);
     if (match) {
       const ruleId = match[1].toLowerCase();
       const explanation = match[2].trim();
       
+      console.error('[ArchGuard] Found potential violation:', ruleId);
+      
       // Find the corresponding rule
       const rule = rules.find(r => r.id === ruleId);
       if (rule) {
+        console.error('[ArchGuard] Matched rule:', rule.name, '(severity:', rule.severity + ')');
         violations.push({
           ruleId: rule.id,
           ruleName: rule.name,
           severity: rule.severity,
           explanation
         });
+      } else {
+        console.error('[ArchGuard] No matching rule found for ID:', ruleId);
       }
     }
   }
 
+  console.error('[ArchGuard] Total violations found:', violations.length);
+
+  // Only check for "NO VIOLATIONS" if we didn't find any violations
+  // This handles cases where Granite says "NO VIOLATIONS were found related to X"
+  // but still lists violations for other rules
+  if (violations.length === 0) {
+    if (response.includes('NO VIOLATIONS') || response.includes('no violations')) {
+      console.error('[ArchGuard] Response indicates NO VIOLATIONS and none were parsed');
+      return {
+        isValid: true,
+        violations: [],
+        summary: 'All architectural guardrails passed. No violations detected.'
+      };
+    }
+  }
+
   const isValid = violations.length === 0;
-  const summary = isValid 
+  const summary = isValid
     ? 'All architectural guardrails passed.'
     : `Found ${violations.length} violation(s). Critical: ${violations.filter(v => v.severity === 'critical').length}, High: ${violations.filter(v => v.severity === 'high').length}`;
 
